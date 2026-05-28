@@ -11,7 +11,9 @@ import java.util.List;
 public class DynamicCompilerService {
     public byte[] compile(String className, String sourceCode) throws Exception {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-
+        if (compiler == null) {
+            throw new RuntimeException("JavaCompiler is null. Use JDK, not JRE.");
+        }
         JavaFileObject file = new JavaSourceFromString(className, sourceCode);
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
 

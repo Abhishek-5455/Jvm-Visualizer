@@ -8,5 +8,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 public class ByteCodeResponse {
-    private List<String> instructions;
+    private List<ByteCodeInstruction> instructions;
+    private List<ExecutionStep> executionSteps;
+    private ControlFlowGraph controlFlowGraph;
 }
