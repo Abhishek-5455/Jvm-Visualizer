@@ -66,6 +66,7 @@ public class CFGGeneratorService {
                                 "TRUE"
                         )
                 );
+
                 if(i + 1 < instructions.size()) {
                     edges.add(
                             new CFGEdge(

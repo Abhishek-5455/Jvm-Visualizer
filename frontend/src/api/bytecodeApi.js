@@ -1,15 +1,19 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API = 'http://localhost:8080/api/bytecode';
+const API =
+  "http://localhost:8080/api/bytecode";
 
-export const analyzeCode = async (
-    sourceCode
-) => {
-    const response = await axios.post(API, { 
-        className: 'Demo',
-        sourceCode: sourceCode
-     }
-    );
+export const analyzeCode =
+  async (sourceCode) => {
+
+    const response =
+      await axios.post(
+        API,
+        {
+          className: "Demo",
+          sourceCode
+        }
+      );
 
     return response.data;
-}
+  };

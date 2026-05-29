@@ -6,23 +6,22 @@ export default function CodeEditor({
 }) {
 
   return (
+
     <Editor
-      height="650px"
+      height="750px"
       defaultLanguage="java"
       value={code}
-      onChange={(value) => setCode(value)}
+      onChange={(value) =>
+        setCode(value || "")
+      }
       theme="vs-dark"
       options={{
-        fontSize: 16,
         minimap: {
-          enabled: false,
+          enabled: false
         },
-        smoothScrolling: true,
-        padding: {
-          top: 20,
-        },
-        fontLigatures: true,
+        fontSize: 16
       }}
     />
+
   );
 }

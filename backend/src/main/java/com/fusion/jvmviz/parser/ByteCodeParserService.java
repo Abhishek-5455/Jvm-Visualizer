@@ -1,108 +1,193 @@
 package com.fusion.jvmviz.parser;
 
 import com.fusion.jvmviz.dto.ByteCodeInstruction;
+
+import com.fusion.jvmviz.dto.PendingJump;
 import org.objectweb.asm.*;
 import org.objectweb.asm.util.Printer;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class ByteCodeParserService {
-    public List<ByteCodeInstruction> parse(byte[] classBytes) throws Exception {
-        List<ByteCodeInstruction> instructions = new ArrayList<>();
-        ClassReader reader = new ClassReader(classBytes);
 
-        AtomicInteger instructionIndex = new AtomicInteger(0);
+    public List<ByteCodeInstruction> parse(
+            byte[] classBytes
+    ) {
 
-        Map<Label, Integer> labelMap = new HashMap<>();
-        reader.accept(new ClassVisitor(Opcodes.ASM9) {
+        List<ByteCodeInstruction> instructions =
+                new ArrayList<>();
 
+        Map<Label, Integer> labelMap =
+                new HashMap<>();
 
+        List<PendingJump> pendingJumps =
+                new ArrayList<>();
 
-            @Override
-            public org.objectweb.asm.MethodVisitor visitMethod(
-                    int access,
-                    String name,
-                    String descriptor,
-                    String signature,
-                    String[] exceptions
-            ) {
-                return new MethodVisitor(Opcodes.ASM9) {
+        AtomicInteger instructionIndex =
+                new AtomicInteger(0);
 
-                    @Override
-                    public void visitLabel(Label label) {
-                        labelMap.put(label, instructionIndex.get());
-                    }
+        ClassReader reader =
+                new ClassReader(classBytes);
+
+        reader.accept(
+                new ClassVisitor(Opcodes.ASM9) {
 
                     @Override
-                    public void visitInsn(int opcode) {
-                        instructions.add(
-                          new ByteCodeInstruction(
-                                    instructionIndex.getAndIncrement(),
-                                    Printer.OPCODES[opcode],
-                                    null
-                          )
-                        );
-                    }
-
-                    @Override
-                    public void visitVarInsn(int opcode, int varIndex) {
-                        instructions.add(
-                               new ByteCodeInstruction(
-                                        instructionIndex.getAndIncrement(),
-                                        Printer.OPCODES[opcode],
-                                        String.valueOf(varIndex)
-                               )
-                        );
-                    }
-
-                    @Override
-                    public void visitMethodInsn(
-                            int opcode,
-                            String owner,
+                    public MethodVisitor visitMethod(
+                            int access,
                             String name,
                             String descriptor,
-                            boolean isInterface
+                            String signature,
+                            String[] exceptions
                     ) {
-                        instructions.add(
-                                new ByteCodeInstruction(
-                                        instructionIndex.getAndIncrement(),
-                                        Printer.OPCODES[opcode],
-                                        owner + "." + name + " : " + descriptor
-                                )
-                        );
+
+                        return new MethodVisitor(
+                                Opcodes.ASM9
+                        ) {
+
+                            @Override
+                            public void visitLabel(
+                                    Label label
+                            ) {
+
+                                labelMap.put(
+                                        label,
+                                        instructionIndex.get()
+                                );
+                            }
+
+                            @Override
+                            public void visitInsn(
+                                    int opcode
+                            ) {
+
+                                instructions.add(
+                                        new ByteCodeInstruction(
+                                                instructionIndex.getAndIncrement(),
+                                                Printer.OPCODES[opcode],
+                                                null
+                                        )
+                                );
+                            }
+
+                            @Override
+                            public void visitVarInsn(
+                                    int opcode,
+                                    int varIndex
+                            ) {
+
+                                instructions.add(
+                                        new ByteCodeInstruction(
+                                                instructionIndex.getAndIncrement(),
+                                                Printer.OPCODES[opcode],
+                                                String.valueOf(varIndex)
+                                        )
+                                );
+                            }
+
+                            @Override
+                            public void visitMethodInsn(
+                                    int opcode,
+                                    String owner,
+                                    String methodName,
+                                    String methodDescriptor,
+                                    boolean isInterface
+                            ) {
+
+                                instructions.add(
+                                        new ByteCodeInstruction(
+                                                instructionIndex.getAndIncrement(),
+                                                Printer.OPCODES[opcode],
+                                                owner +
+                                                        "." +
+                                                        methodName +
+                                                        " : " +
+                                                        methodDescriptor
+                                        )
+                                );
+                            }
+
+                            @Override
+                            public void visitFieldInsn(
+                                    int opcode,
+                                    String owner,
+                                    String fieldName,
+                                    String fieldDescriptor
+                            ) {
+
+                                instructions.add(
+                                        new ByteCodeInstruction(
+                                                instructionIndex.getAndIncrement(),
+                                                Printer.OPCODES[opcode],
+                                                owner +
+                                                        "." +
+                                                        fieldName
+                                        )
+                                );
+                            }
+
+                            @Override
+                            public void visitJumpInsn(
+                                    int opcode,
+                                    Label label
+                            ) {
+
+                                ByteCodeInstruction jumpInstruction =
+                                        new ByteCodeInstruction(
+                                                instructionIndex.getAndIncrement(),
+                                                Printer.OPCODES[opcode],
+                                                null
+                                        );
+
+                                instructions.add(
+                                        jumpInstruction
+                                );
+
+                                pendingJumps.add(
+                                        new PendingJump(
+                                                label,
+                                                jumpInstruction
+                                        )
+                                );
+                            }
+                        };
                     }
 
-                    @Override
-                    public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
-                        instructions.add(
-                            new ByteCodeInstruction(
-                                    instructionIndex.getAndIncrement(),
-                                    Printer.OPCODES[opcode],
-                                    owner + "." + name + " : " + descriptor
-                            )
-                        );
-                    }
+                },
+                0
+        );
 
-                    @Override
-                    public void visitJumpInsn(int opcode, Label label) {
-                        instructions.add(
-                                new ByteCodeInstruction(
-                                        instructionIndex.getAndIncrement(),
-                                        Printer.OPCODES[opcode],
-                                        String.valueOf(labelMap.getOrDefault(label, -1)) + label.hashCode()
-                                )
-                        );
-                    }
+        // PASS 2: Resolve labels
 
-                };
+        for (PendingJump jump : pendingJumps) {
+
+            Integer target =
+                    labelMap.get(
+                            jump.getLabel()
+                    );
+
+            if (target != null) {
+
+                jump.getInstruction()
+                        .setOperand(
+                                String.valueOf(target)
+                        );
+
+            } else {
+
+                jump.getInstruction()
+                        .setOperand("-1");
             }
-        }, 0);
+        }
+        for (PendingJump jump : pendingJumps) {
+
+            System.out.println(
+                    jump.getInstruction()
+            );
+        }
 
         return instructions;
     }

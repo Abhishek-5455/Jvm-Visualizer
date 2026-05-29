@@ -36,6 +36,14 @@ public class ByteCodeController {
 
             ControlFlowGraph cfg = cfgGeneratorService.generate(instructions);
 
+            System.out.println("==== Instructions ====");
+            instructions.forEach(System.out::println);
+
+            System.out.println("==== Edges ====");
+            cfg.getEdges().forEach(System.out::println);
+
+
+
             return new ByteCodeResponse(instructions, executionSteps, cfg);
         } catch (Exception e) {
             e.printStackTrace();
