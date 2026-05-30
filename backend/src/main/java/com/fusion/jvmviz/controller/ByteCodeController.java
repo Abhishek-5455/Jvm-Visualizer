@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.naming.ldap.Control;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -24,27 +25,36 @@ public class ByteCodeController {
     private final OperandStackSimulator simulator;
     private final CFGGeneratorService cfgGeneratorService;
     @PostMapping
-    public ByteCodeResponse analyze(@RequestBody CodeRequest request) throws Exception {
+    public AnalysisResponse analyze(@RequestBody CodeRequest request) throws Exception {
         try {
             byte[] bytes = compilerService.compile(
                     request.getClassName(),
                     request.getSourceCode()
             );
 
-            List<ByteCodeInstruction> instructions = parserService.parse(bytes);
-            List<ExecutionStep> executionSteps = simulator.simulator(instructions);
+            List<ParsedMethod> parsedMethods = parserService.parse(bytes);
+            List<MethodAnalysis> analysis = new ArrayList<>();
 
-            ControlFlowGraph cfg = cfgGeneratorService.generate(instructions);
+            for(ParsedMethod parsedMethod: parsedMethods) {
+                List<ExecutionStep> executionSteps = simulator.simulate(
+                        parsedMethod.getInstructions()
+                );
 
-            System.out.println("==== Instructions ====");
-            instructions.forEach(System.out::println);
+                ControlFlowGraph cfg = cfgGeneratorService.generate(parsedMethod.getInstructions());
 
-            System.out.println("==== Edges ====");
-            cfg.getEdges().forEach(System.out::println);
+                analysis.add(
+                        new MethodAnalysis(
+                                parsedMethod.getMethodName(),
+                                parsedMethod.getDescriptor(),
+                                parsedMethod.getInstructions(),
+                                executionSteps,
+                                cfg
+                        )
+                );
 
+            }
 
-
-            return new ByteCodeResponse(instructions, executionSteps, cfg);
+            return new AnalysisResponse(analysis);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);

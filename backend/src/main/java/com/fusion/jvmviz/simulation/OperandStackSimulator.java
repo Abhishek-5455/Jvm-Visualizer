@@ -10,7 +10,7 @@ import java.util.Stack;
 
 @Service
 public class OperandStackSimulator {
-    public List<ExecutionStep> simulator(
+    public List<ExecutionStep> simulate(
             List<ByteCodeInstruction> instructions
     ) {
         Stack<String> operandStack = new Stack<>();

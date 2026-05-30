@@ -1,10 +1,12 @@
+import StackView from "./StackView";
+
 export default function StackPanel({
   executionSteps
 }) {
 
   return (
 
-    <div className="max-h-[300px] overflow-y-auto">
+    <div className="space-y-6">
 
       {
         executionSteps.map((step) => (
@@ -12,52 +14,61 @@ export default function StackPanel({
           <div
             key={step.instructionIndex}
             className="
-            border-b
+            bg-zinc-900
+            border
             border-zinc-800
-            pb-3
-            mb-3
+            rounded-xl
+            p-4
             "
           >
 
             <div
               className="
-              text-purple-400
-              font-mono
-              mb-2
+              flex
+              justify-between
+              items-center
+              mb-4
               "
             >
-              {step.opcode}
+
+              <div
+                className="
+                text-cyan-400
+                font-mono
+                text-lg
+                "
+              >
+                {step.opcode}
+              </div>
+
+              <div
+                className="
+                text-zinc-500
+                text-sm
+                "
+              >
+                #{step.instructionIndex}
+              </div>
+
             </div>
 
             <div
               className="
-              flex
-              flex-col-reverse
-              gap-2
+              grid
+              grid-cols-2
+              gap-6
               "
             >
 
-              {
-                step.stackAfter.map(
-                  (value, index) => (
+              <StackView
+                title="Before"
+                values={step.stackBefore}
+              />
 
-                    <div
-                      key={index}
-                      className="
-                      bg-purple-500/20
-                      border
-                      border-purple-500/40
-                      rounded-lg
-                      p-2
-                      font-mono
-                      "
-                    >
-                      {value}
-                    </div>
-
-                  )
-                )
-              }
+              <StackView
+                title="After"
+                values={step.stackAfter}
+              />
 
             </div>
 

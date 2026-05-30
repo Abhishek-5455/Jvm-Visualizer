@@ -2,6 +2,7 @@ package com.fusion.jvmviz.parser;
 
 import com.fusion.jvmviz.dto.ByteCodeInstruction;
 
+import com.fusion.jvmviz.dto.ParsedMethod;
 import com.fusion.jvmviz.dto.PendingJump;
 import org.objectweb.asm.*;
 import org.objectweb.asm.util.Printer;
@@ -13,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class ByteCodeParserService {
 
-    public List<ByteCodeInstruction> parse(
+    public List<ParsedMethod> parse(
             byte[] classBytes
     ) {
 
@@ -31,6 +32,8 @@ public class ByteCodeParserService {
 
         ClassReader reader =
                 new ClassReader(classBytes);
+
+        List<ParsedMethod> methods = new ArrayList<>();
 
         reader.accept(
                 new ClassVisitor(Opcodes.ASM9) {
@@ -153,6 +156,33 @@ public class ByteCodeParserService {
                                         )
                                 );
                             }
+
+
+                            @Override
+                            public void visitEnd() {
+                                for(
+                                        PendingJump jump: pendingJumps
+                                ) {
+                                    Integer target =
+                                            labelMap.get(
+                                                    jump.getLabel()
+                                            );
+
+                                    jump.getInstruction()
+                                            .setOperand(
+                                                    target != null ? String.valueOf(target) : "-1"
+                                            );
+                                }
+
+                                methods.add(
+                                        new ParsedMethod(
+                                                name,
+                                                descriptor,
+                                                new ArrayList<>(instructions)
+                                        )
+                                );
+                                super.visitEnd();
+                            }
                         };
                     }
 
@@ -189,6 +219,6 @@ public class ByteCodeParserService {
             );
         }
 
-        return instructions;
+        return methods;
     }
 }
